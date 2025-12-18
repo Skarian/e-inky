@@ -1,0 +1,23 @@
+# Node
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Next.js
+.next
+out
+
+# Tauri
+/src-tauri/target
+/src-tauri/gen
+/src-tauri/.cargo
+
+# Logs
+*.log
+
+# Editor
+.DS_Store
+.idea
+.vscode
