@@ -1,0 +1,25 @@
+[package]
+name = "crengine"
+version = "0.1.0"
+edition = "2021"
+description = "CREngine-NG bindings and build glue for the Xteink X4 toolchain"
+license = "GPL-2.0-only"
+links = "crengine-ng"
+build = "build.rs"
+
+[lib]
+crate-type = ["rlib", "staticlib", "cdylib"]
+
+[features]
+default = ["harfbuzz", "icu", "fribidi"]
+harfbuzz = []
+icu = []
+fribidi = []
+min-deps = []
+
+[dependencies]
+
+[build-dependencies]
+anyhow = "1"
+cmake = "0.1"
+pkg-config = "0.3"
