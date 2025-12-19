@@ -13,6 +13,8 @@ out
 /src-tauri/target
 /src-tauri/gen
 /src-tauri/.cargo
+/src-tauri/icons/icon.png
+/src-tauri/src-tauri
 
 # Logs
 *.log
