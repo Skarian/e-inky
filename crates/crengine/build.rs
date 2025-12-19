@@ -9,6 +9,7 @@ fn main() -> Result<()> {
 
     let manifest_dir =
         PathBuf::from(env::var("CARGO_MANIFEST_DIR").context("CARGO_MANIFEST_DIR missing")?);
+    let target_os = env::var("CARGO_CFG_TARGET_OS").context("CARGO_CFG_TARGET_OS missing")?;
     let vendor_dir = manifest_dir.join("vendor");
     let source_dir = vendor_dir.join("crengine");
 
@@ -26,6 +27,16 @@ fn main() -> Result<()> {
     emit_link_searches(&cmake_dst)?;
     emit_cpp_runtime_link()?;
     println!("cargo:include={}", source_dir.join("include").display());
+
+    if bindings_supported(&target_os) {
+        let shim_dir = manifest_dir.join("src").join("shim");
+        compile_shim(&shim_dir)?;
+        generate_bindings(&shim_dir)?;
+    } else {
+        println!(
+            "cargo:warning=Skipping CREngine shim bindings for unsupported target OS: {target_os}"
+        );
+    }
 
     Ok(())
 }
@@ -190,6 +201,9 @@ fn emit_rerun_directives() {
     println!("cargo:rerun-if-env-changed=CARGO_FEATURE_MIN_DEPS");
     println!("cargo:rerun-if-env-changed=TARGET");
     println!("cargo:rerun-if-env-changed=HOST");
+    println!("cargo:rerun-if-env-changed=CARGO_CFG_TARGET_OS");
+    println!("cargo:rerun-if-changed=src/shim/shim.c");
+    println!("cargo:rerun-if-changed=src/shim/shim.h");
 }
 
 fn has_feature(name: &str) -> bool {
@@ -237,4 +251,48 @@ fn on_off(value: bool) -> &'static str {
     } else {
         "OFF"
     }
+}
+
+fn bindings_supported(target_os: &str) -> bool {
+    matches!(target_os, "linux" | "macos" | "windows")
+}
+
+fn compile_shim(shim_dir: &Path) -> Result<()> {
+    let header = shim_dir.join("shim.h");
+    let source = shim_dir.join("shim.c");
+    if !header.exists() || !source.exists() {
+        anyhow::bail!(
+            "CREngine shim sources are missing. Expected to find {} and {}",
+            header.display(),
+            source.display()
+        );
+    }
+
+    let mut build = cc::Build::new();
+    build.include(shim_dir);
+    build.file(source);
+    build.flag_if_supported("-std=c11");
+    build.compile("cre-shim");
+    Ok(())
+}
+
+fn generate_bindings(shim_dir: &Path) -> Result<()> {
+    let header = shim_dir.join("shim.h");
+    let out_dir = PathBuf::from(env::var("OUT_DIR").context("OUT_DIR missing")?);
+
+    let bindings = bindgen::Builder::default()
+        .header(header.display().to_string())
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+        .allowlist_function("cre_.*")
+        .allowlist_type("Cre.*")
+        .allowlist_var("CRE_.*")
+        .clang_arg(format!("-I{}", shim_dir.display()))
+        .generate()
+        .context("Unable to generate bindings for CREngine shim")?;
+
+    bindings
+        .write_to_file(out_dir.join("bindings.rs"))
+        .context("Failed to write bindings to OUT_DIR")?;
+
+    Ok(())
 }
