@@ -22,4 +22,6 @@ min-deps = []
 [build-dependencies]
 anyhow = "1"
 cmake = "0.1"
+bindgen = { version = "0.69", default-features = false, features = ["runtime"] }
+cc = "1"
 pkg-config = "0.3"
