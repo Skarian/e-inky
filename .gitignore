@@ -21,3 +21,7 @@ out
 .DS_Store
 .idea
 .vscode
+
+# Vendored CREngine sources (populated via scripts/update-crengine.sh)
+crates/crengine/vendor/**
+!crates/crengine/vendor/.gitkeep
