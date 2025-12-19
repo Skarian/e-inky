@@ -18,6 +18,8 @@ fribidi = []
 min-deps = []
 
 [dependencies]
+thiserror = "1"
+tempfile = "3"
 
 [build-dependencies]
 anyhow = "1"
